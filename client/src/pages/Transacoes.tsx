@@ -68,11 +68,12 @@ export default function Transacoes() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    const data = { ...form, amount: parseFloat(form.amount) }
     try {
       if (editing) {
-        await api.transactions.update(editing.id, form)
+        await api.transactions.update(editing.id, data)
       } else {
-        await api.transactions.create(form)
+        await api.transactions.create(data)
       }
       closeModal()
       loadData()
