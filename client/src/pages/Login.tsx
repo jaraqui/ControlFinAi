@@ -1,9 +1,42 @@
+import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { Button } from '../components/ui/button'
 import { Wallet } from 'lucide-react'
 
 export default function Login() {
   const { login } = useAuth()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email, password }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.error || 'Login failed')
+        return
+      }
+
+      window.location.href = '/'
+    } catch (err) {
+      setError('Login failed')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
@@ -16,10 +49,45 @@ export default function Login() {
         </div>
 
         <p className="text-center text-muted-foreground max-w-md">
-          Controle suas finanças de forma simples e eficiente. Faça login com sua conta Google para começar.
+          Controle suas finanças de forma simples e eficiente.
         </p>
 
-        <Button onClick={login} size="lg" className="mt-4">
+        <form onSubmit={handleSubmit} className="w-full max-w-md space-y-4">
+          <div className="space-y-2">
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full h-10 px-3 rounded-md border bg-background"
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <input
+              type="password"
+              placeholder="Senha"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full h-10 px-3 rounded-md border bg-background"
+              required
+            />
+          </div>
+
+          {error && <p className="text-destructive text-sm">{error}</p>}
+
+          <Button type="submit" size="lg" className="w-full" disabled={loading}>
+            {loading ? 'Entrando...' : 'Entrar'}
+          </Button>
+        </form>
+
+        <div className="flex items-center gap-2">
+          <div className="h-px flex-1 bg-border" />
+          <span className="text-sm text-muted-foreground">ou</span>
+          <div className="h-px flex-1 bg-border" />
+        </div>
+
+        <Button onClick={login} variant="outline" size="lg" className="w-full">
           Entrar com Google
         </Button>
       </div>

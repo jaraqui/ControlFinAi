@@ -55,6 +55,21 @@ async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> 
 export const api = {
   auth: {
     me: () => fetchAPI<User>('/auth/me'),
+    login: (email: string, password: string) =>
+      fetchAPI<User>('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      }),
+    register: (email: string, password: string, name?: string) =>
+      fetchAPI<User>('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({ email, password, name }),
+      }),
+    changePassword: (currentPassword: string, newPassword: string) =>
+      fetchAPI<{ message: string }>('/auth/password', {
+        method: 'PUT',
+        body: JSON.stringify({ currentPassword, newPassword }),
+      }),
     logout: () => fetchAPI<{ message: string }>('/auth/logout', { method: 'POST' }),
     getGoogleUrl: () => `${API_URL}/auth/google`,
   },
