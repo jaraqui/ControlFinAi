@@ -28,6 +28,9 @@ model Transaction {
   date        DateTime @default(now())
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attachment String?
+  attachmentName String?
+  attachmentType String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

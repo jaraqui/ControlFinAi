@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { api, Transaction, Category } from '../lib/api'
 import { formatCurrency, formatDate } from '../lib/utils'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button'
-import { Plus, Pencil, Trash2, X } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, Paperclip, FileText, Image } from 'lucide-react'
 
 export default function Transacoes() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
@@ -11,12 +11,16 @@ export default function Transacoes() {
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState<Transaction | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [form, setForm] = useState({
     type: 'expense' as 'income' | 'expense',
     amount: '',
     category: '',
     description: '',
     date: new Date().toISOString().split('T')[0],
+    file: null as File | null,
+    fileName: '',
   })
 
   useEffect(() => {
@@ -47,6 +51,8 @@ export default function Transacoes() {
         category: transaction.category,
         description: transaction.description || '',
         date: new Date(transaction.date).toISOString().split('T')[0],
+        file: null,
+        fileName: transaction.attachmentName || '',
       })
     } else {
       setEditing(null)
@@ -56,6 +62,8 @@ export default function Transacoes() {
         category: '',
         description: '',
         date: new Date().toISOString().split('T')[0],
+        file: null,
+        fileName: '',
       })
     }
     setShowModal(true)
@@ -66,12 +74,22 @@ export default function Transacoes() {
     setEditing(null)
   }
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setForm({ ...form, file, fileName: file.name })
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const data = { ...form, amount: parseFloat(form.amount) }
+    setUploading(true)
     try {
       if (editing) {
         await api.transactions.update(editing.id, data)
+      } else if (form.file) {
+        await api.transactions.createWithFile(data, form.file)
       } else {
         await api.transactions.create(data)
       }
@@ -79,6 +97,8 @@ export default function Transacoes() {
       loadData()
     } catch (error) {
       console.error('Error saving transaction:', error)
+    } finally {
+      setUploading(false)
     }
   }
 
@@ -91,6 +111,13 @@ export default function Transacoes() {
         console.error('Error deleting transaction:', error)
       }
     }
+  }
+
+  const getFileIcon = (type?: string) => {
+    if (!type) return null
+    if (type.includes('pdf')) return <FileText className="h-4 w-4 text-red-500" />
+    if (type.includes('image')) return <Image className="h-4 w-4 text-blue-500" />
+    return <Paperclip className="h-4 w-4" />
   }
 
   if (loading) {
@@ -125,9 +152,15 @@ export default function Transacoes() {
                 >
                   <div className="space-y-1">
                     <p className="font-medium">{t.description || t.category}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {t.category} • {formatDate(t.date)}
-                    </p>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <span>{t.category} • {formatDate(t.date)}</span>
+                      {t.attachment && (
+                        <span className="flex items-center gap-1">
+                          {getFileIcon(t.attachmentType)}
+                          <span className="text-xs">{t.attachmentName}</span>
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className={t.type === 'income' ? 'text-green-500 font-medium' : 'text-red-500 font-medium'}>
@@ -240,12 +273,31 @@ export default function Transacoes() {
                 />
               </div>
 
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Anexo (PDF ou Imagem)</label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png,.gif,.webp"
+                  onChange={handleFileChange}
+                  className="w-full h-10 px-3 rounded-md border bg-background"
+                />
+                {form.fileName && (
+                  <p className="text-sm text-muted-foreground">
+                    Arquivo: {form.fileName}
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Formatos: PDF, JPEG, PNG, GIF ou WebP (máx. 10MB)
+                </p>
+              </div>
+
               <div className="flex gap-2 pt-4">
                 <Button type="button" variant="outline" onClick={closeModal} className="flex-1">
                   Cancelar
                 </Button>
-                <Button type="submit" className="flex-1">
-                  Salvar
+                <Button type="submit" className="flex-1" disabled={uploading}>
+                  {uploading ? 'Enviando...' : 'Salvar'}
                 </Button>
               </div>
             </form>

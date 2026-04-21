@@ -15,6 +15,9 @@ export interface Transaction {
   description?: string
   date: string
   userId: string
+  attachment?: string
+  attachmentName?: string
+  attachmentType?: string
   createdAt: string
 }
 
@@ -84,6 +87,23 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(data),
       }),
+    createWithFile: async (data: Partial<Transaction>, file: File) => {
+      const formData = new FormData()
+      formData.append('type', data.type || 'expense')
+      formData.append('amount', String(data.amount))
+      formData.append('category', data.category)
+      formData.append('description', data.description || '')
+      formData.append('date', data.date || new Date().toISOString())
+      if (file) formData.append('attachment', file)
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      })
+      if (!response.ok) throw new Error('Upload failed')
+      return response.json()
+    },
     update: (id: string, data: Partial<Transaction>) =>
       fetchAPI<Transaction>(`/transactions/${id}`, {
         method: 'PUT',
