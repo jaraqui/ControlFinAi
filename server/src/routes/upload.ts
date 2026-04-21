@@ -13,22 +13,22 @@ const isAuthenticated = (req: express.Request, res: express.Response, next: expr
 };
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const userId = (req.user as any)?.id || 'uploads';
+  destination: (req: any, file: any, cb: any) => {
+    const userId = req.user?.id || 'uploads';
     const dir = path.join(process.cwd(), 'uploads', userId);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
     cb(null, dir);
   },
-  filename: (req, file, cb) => {
+  filename: (req: any, file: any, cb: any) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     const ext = path.extname(file.originalname);
     cb(null, file.fieldname + '-' + uniqueSuffix + ext);
   },
 });
 
-const fileFilter = (req: express.Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+const fileFilter = (req: any, file: any, cb: any) => {
   const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/gif', 'image/webp'];
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
@@ -105,3 +105,4 @@ router.get('/:id', isAuthenticated, async (req, res) => {
 );
 
 export default router;
+}
