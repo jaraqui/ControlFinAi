@@ -5,12 +5,12 @@ import fs from 'fs';
 
 const router = express.Router();
 
-const isAuthenticated = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+function isAuthenticated(req: express.Request, res: express.Response, next: express.NextFunction) {
   if (req.isAuthenticated()) {
     return next();
   }
   res.status(401).json({ error: 'Unauthorized' });
-};
+}
 
 const storage = multer.diskStorage({
   destination: (req: any, file: any, cb: any) => {
@@ -33,7 +33,7 @@ const fileFilter = (req: any, file: any, cb: any) => {
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('Tipo de arquivo não permitido. Use PDF, JPEG, PNG, GIF ou WebP.'));
+    cb(new Error('Tipo de arquivo nao permitido. Use PDF, JPEG, PNG, GIF ou WebP.'));
   }
 };
 
@@ -45,64 +45,34 @@ const upload = multer({
   },
 });
 
-router.post('/',
-  isAuthenticated,
-  upload.single('attachment'),
-  async (req, res) => {
-    try {
-      if (!req.file) {
-        return res.status(400).json({ error: 'Nenhum arquivo enviado' });
-      }
-
-      const prisma = (req as any).prisma;
-      const userId = (req.user as any).id;
-      const { type, amount, category, description, date } = req.body;
-
-      const transaction = await prisma.transaction.create({
-        data: {
-          type,
-          amount: parseFloat(amount),
-          category,
-          description,
-          date: new Date(date || Date.now()),
-          userId,
-          attachment: `/uploads/${userId}/${req.file.filename}`,
-          attachmentName: req.file.originalname,
-          attachmentType: req.file.mimetype,
-        },
-      });
-
-      res.json(transaction);
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to create transaction' });
-    }
-  }
-);
-
-router.get('/:id', isAuthenticated, async (req, res) => {
+router.post('/', isAuthenticated, upload.single('attachment'), async (req, res) => {
   try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Nenhum arquivo enviado' });
+    }
+
     const prisma = (req as any).prisma;
     const userId = (req.user as any).id;
-    const { id } = req.params;
+    const { type, amount, category, description, date } = req.body;
 
-    const transaction = await prisma.transaction.findUnique({
-      where: { id, userId },
+    const transaction = await prisma.transaction.create({
+      data: {
+        type,
+        amount: parseFloat(amount),
+        category,
+        description,
+        date: new Date(date || Date.now()),
+        userId,
+        attachment: '/uploads/' + userId + '/' + req.file.filename,
+        attachmentName: req.file.originalname,
+        attachmentType: req.file.mimetype,
+      },
     });
 
-    if (!transaction || !transaction.attachment) {
-      return res.status(404).json({ error: 'File not found' });
-    }
-
-    const filePath = path.join(process.cwd(), transaction.attachment);
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ error: 'File not found' });
-    }
-
-    res.download(filePath, transaction.attachmentName);
+    res.json(transaction);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to download file' });
+    res.status(500).json({ error: 'Failed to create transaction' });
   }
-);
+});
 
 export default router;
-}

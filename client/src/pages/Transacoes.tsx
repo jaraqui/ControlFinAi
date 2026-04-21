@@ -263,6 +263,29 @@ export default function Transacoes() {
               </div>
 
               <div className="space-y-2">
+                <label className="text-sm font-medium">Anexo (Recibo/Nota)</label>
+                <div className="flex items-center gap-2">
+                  <label className="flex items-center gap-2 px-4 py-2 border rounded-md cursor-pointer hover:bg-accent">
+                    {form.fileName ? (
+                      <span className="text-green-500 text-sm">📎 {form.fileName}</span>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">📎 Clique para adicionar arquivo</span>
+                    )}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png,.gif,.webp"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  PDF, JPEG, PNG, GIF ou WebP (máx. 10MB)
+                </p>
+              </div>
+
+              <div className="space-y-2">
                 <label className="text-sm font-medium">Data</label>
                 <input
                   type="date"
@@ -271,25 +294,6 @@ export default function Transacoes() {
                   className="w-full h-10 px-3 rounded-md border bg-background"
                   required
                 />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Anexo (PDF ou Imagem)</label>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png,.gif,.webp"
-                  onChange={handleFileChange}
-                  className="w-full h-10 px-3 rounded-md border bg-background"
-                />
-                {form.fileName && (
-                  <p className="text-sm text-muted-foreground">
-                    Arquivo: {form.fileName}
-                  </p>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  Formatos: PDF, JPEG, PNG, GIF ou WebP (máx. 10MB)
-                </p>
               </div>
 
               <div className="flex gap-2 pt-4">
